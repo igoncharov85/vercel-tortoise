@@ -1,4 +1,6 @@
 import os
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, BackgroundTasks
@@ -23,7 +25,24 @@ TORTOISE_CONFIG = {
     "timezone": "UTC"
 }
 
-app = FastAPI(docs_url="/")
+def register_orm(app: FastAPI):
+    register_tortoise(
+            app,
+            TORTOISE_CONFIG,
+            generate_schemas=True,
+            add_exception_handlers=True,
+        )
+
+
+@asynccontextmanager
+async def lifespan(fast_api_app: FastAPI) -> AsyncGenerator[None, None]:
+    # app startup
+    register_orm(fast_api_app)
+    yield
+    # db connections closed
+    await Tortoise.close_connections()
+
+app = FastAPI(lifespan=lifespan, docs_url="/")
 
 app.add_middleware(
     CORSMiddleware,
@@ -33,23 +52,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-@app.on_event("startup")
-async def startup_event():
-    await Tortoise.init(TORTOISE_CONFIG)
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    await Tortoise.close_connections()
-
-
-register_tortoise(
-        app,
-        TORTOISE_CONFIG,
-        generate_schemas=True,
-        add_exception_handlers=True,
-    )
 
 # Vercel is not able to process db request without it
 @app.middleware("http")
