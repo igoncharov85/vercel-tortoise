@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request, BackgroundTasks
 from tortoise import fields
 from tortoise.models import Model
 
-from initializer import init
+from api.initializer import init
 
 app = FastAPI(docs_url="/")
 

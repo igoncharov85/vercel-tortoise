@@ -45,7 +45,7 @@ def init_db(app: FastAPI):
     register_tortoise(
         app,
         db_url=DATABASE_URL,
-        modules={"models": ["main"]},
+        modules={"models": ["api.index"]},
         generate_schemas=True,
         add_exception_handlers=True,
     )
