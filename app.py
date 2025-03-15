@@ -93,7 +93,8 @@ async def ping(request_obj: Request, background_tasks: BackgroundTasks):
 
 async def save_ping_history(ip_address):
     # await PingHistory.create(IPAddress=ip_address)
-    logger.info("Ping History saved")
+    logger.warning("Ping History saved")
+
 
 @app.get("/history")
 async def ping_history(request_obj: Request):
