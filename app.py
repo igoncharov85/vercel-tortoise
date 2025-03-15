@@ -1,6 +1,7 @@
 import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+import logging
 
 import sentry_sdk
 from dotenv import load_dotenv
@@ -10,6 +11,7 @@ from tortoise import fields, Tortoise
 from tortoise.models import Model
 from tortoise.contrib.fastapi import register_tortoise
 
+logger = logging.getLogger(__name__)
 load_dotenv()
 
 DATABASE_URL = os.getenv("POSTGRES_URL_NO_SSL")
@@ -90,8 +92,8 @@ async def ping(request_obj: Request, background_tasks: BackgroundTasks):
 
 
 async def save_ping_history(ip_address):
-    await PingHistory.create(IPAddress=ip_address)
-
+    # await PingHistory.create(IPAddress=ip_address)
+    logger.info("Ping History saved")
 
 @app.get("/history")
 async def ping_history(request_obj: Request):
