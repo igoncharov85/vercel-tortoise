@@ -16,14 +16,6 @@ DATABASE_URL = os.getenv("POSTGRES_URL_NO_SSL")
 SENTRY_DSN = os.getenv("SENTRY_DSN")
 VERCEL_TARGET_ENV = os.getenv("VERCEL_TARGET_ENV")
 
-if SENTRY_DSN:
-    sentry_sdk.init(
-        dsn=SENTRY_DSN,
-        send_default_pii=True,
-        traces_sample_rate=0,
-        environment=VERCEL_TARGET_ENV
-    )
-
 TORTOISE_CONFIG = {
     "connections": {"default": DATABASE_URL},
     "apps": {
@@ -56,6 +48,14 @@ async def lifespan(fast_api_app: FastAPI) -> AsyncGenerator[None, None]:
 
 app = FastAPI(lifespan=lifespan, docs_url="/")
 
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        send_default_pii=True,
+        traces_sample_rate=0,
+        environment=VERCEL_TARGET_ENV
+    )
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -70,7 +70,7 @@ app.add_middleware(
 async def add_process_time_header(request: Request, call_next):
     await Tortoise.init(TORTOISE_CONFIG)
     response = await call_next(request)
-    # await Tortoise.close_connections()
+    await Tortoise.close_connections()
     return response
 
 
