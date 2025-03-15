@@ -14,7 +14,7 @@ TORTOISE_CONFIG = {
     "connections": {"default": DATABASE_URL},
     "apps": {
         "models": {
-            "models": ["db"],
+            "models": ["app"],
             "default_connection": "default",
         },
     },
@@ -44,8 +44,7 @@ async def close_db_connections():
 def init_db(app: FastAPI):
     register_tortoise(
         app,
-        db_url=DATABASE_URL,
-        modules={"models": ["api.index"]},
+        TORTOISE_CONFIG,
         generate_schemas=True,
         add_exception_handlers=True,
     )
