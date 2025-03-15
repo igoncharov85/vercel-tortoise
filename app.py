@@ -2,6 +2,7 @@ import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
+import sentry_sdk
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, BackgroundTasks
 from starlette.middleware.cors import CORSMiddleware
@@ -12,6 +13,16 @@ from tortoise.contrib.fastapi import register_tortoise
 load_dotenv()
 
 DATABASE_URL = os.getenv("POSTGRES_URL_NO_SSL")
+SENTRY_DSN = os.getenv("SENTRY_DSN")
+VERCEL_TARGET_ENV = os.getenv("VERCEL_TARGET_ENV")
+
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        send_default_pii=True,
+        traces_sample_rate=0,
+        environment=VERCEL_TARGET_ENV
+    )
 
 TORTOISE_CONFIG = {
     "connections": {"default": DATABASE_URL},
@@ -24,6 +35,7 @@ TORTOISE_CONFIG = {
     "use_tz": False,
     "timezone": "UTC"
 }
+
 
 def register_orm(app: FastAPI):
     register_tortoise(
