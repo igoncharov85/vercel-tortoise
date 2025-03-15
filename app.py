@@ -1,12 +1,20 @@
 from fastapi import FastAPI, Request, BackgroundTasks
-from tortoise import fields
+from tortoise import fields, Tortoise
 from tortoise.models import Model
 
-from initializer import init
+from initializer import init, TORTOISE_CONFIG
 
 app = FastAPI(docs_url="/")
 
 init(app)
+
+
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    await Tortoise.init(config=TORTOISE_CONFIG)
+    response = await call_next(request)
+    await Tortoise.close_connections()
+    return response
 
 
 class PingHistory(Model):
