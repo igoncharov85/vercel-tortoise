@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Request, BackgroundTasks
 from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
+from starlette.responses import Response
 from tortoise import fields, Tortoise
 from tortoise.models import Model
 from tortoise.contrib.fastapi import register_tortoise
@@ -72,9 +73,23 @@ app.add_middleware(
 @app.middleware("http")
 async def add_process_time_header(request: Request, call_next):
     await Tortoise.init(TORTOISE_CONFIG)
-    response = await call_next(request)
-    await Tortoise.close_connections()
+    try:
+        response = await call_next(request)
+    except Exception as ex:
+        logger.exception(ex)
+        return Response("Internal server error", status_code=500)
+    finally:
+        await Tortoise.close_connections()
     return response
+
+
+@app.middleware("http")
+async def catch_exceptions_middleware(request: Request, call_next):
+    try:
+        return await call_next(request)
+    except Exception as ex:
+        logger.exception(ex)
+        return Response("Internal server error", status_code=500)
 
 
 class PingHistory(Model):
