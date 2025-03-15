@@ -6,6 +6,7 @@ import logging
 import sentry_sdk
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, BackgroundTasks
+from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
 from tortoise import fields, Tortoise
 from tortoise.models import Model
@@ -31,9 +32,9 @@ TORTOISE_CONFIG = {
 }
 
 
-def register_orm(app: FastAPI):
+def register_orm(fast_app: FastAPI):
     register_tortoise(
-            app,
+            fast_app,
             TORTOISE_CONFIG,
             generate_schemas=True,
             add_exception_handlers=True,
@@ -72,7 +73,7 @@ app.add_middleware(
 async def add_process_time_header(request: Request, call_next):
     await Tortoise.init(TORTOISE_CONFIG)
     response = await call_next(request)
-    await Tortoise.close_connections()
+    #await Tortoise.close_connections()
     return response
 
 
@@ -85,15 +86,21 @@ class PingHistory(Model):
         table = "PingHistory"
 
 
-@app.get("/ping")
-async def ping(request_obj: Request, background_tasks: BackgroundTasks):
-    background_tasks.add_task(save_ping_history, request_obj.client.host)
+class PingRequest(BaseModel):
+    SaveAsync: bool = True
+
+
+@app.post("/ping")
+async def ping(fast_request: Request, request: PingRequest, background_tasks: BackgroundTasks):
+    background_tasks.add_task(save_ping_history, request.SaveAsync, fast_request.client.host)
     return {"message": "pong!"}
 
 
-async def save_ping_history(ip_address):
-    # await PingHistory.create(IPAddress=ip_address)
-    logger.warning("Ping History saved")
+async def save_ping_history(save_async: bool, ip_address):
+    logger.warning("Starting to save Ping History")
+    if save_async:
+        await PingHistory.create(IPAddress=ip_address)
+    logger.warning("Saved Ping History")
 
 
 @app.get("/history")
