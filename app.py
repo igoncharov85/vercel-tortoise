@@ -14,7 +14,7 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("POSTGRES_URL_NO_SSL")
 SENTRY_DSN = os.getenv("SENTRY_DSN")
-VERCEL_TARGET_ENV = os.getenv("VERCEL_TARGET_ENV")
+VERCEL_TARGET_ENV = os.getenv("VERCEL_TARGET_ENV", "LOCAL_RUN")
 
 TORTOISE_CONFIG = {
     "connections": {"default": DATABASE_URL},
