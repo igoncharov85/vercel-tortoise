@@ -1,20 +1,63 @@
+import os
+
+from dotenv import load_dotenv
 from fastapi import FastAPI, Request, BackgroundTasks
+from starlette.middleware.cors import CORSMiddleware
 from tortoise import fields, Tortoise
 from tortoise.models import Model
+from tortoise.contrib.fastapi import register_tortoise
 
-from initializer import init, TORTOISE_CONFIG
+load_dotenv()
+
+DATABASE_URL = os.getenv("POSTGRES_URL_NO_SSL")
+
+TORTOISE_CONFIG = {
+    "connections": {"default": DATABASE_URL},
+    "apps": {
+        "models": {
+            "models": ["app"],
+            "default_connection": "default",
+        },
+    },
+    "use_tz": False,
+    "timezone": "UTC"
+}
 
 app = FastAPI(docs_url="/")
 
-init(app)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
-@app.middleware("http")
-async def add_process_time_header(request: Request, call_next):
-    await Tortoise.init(config=TORTOISE_CONFIG)
-    response = await call_next(request)
+@app.on_event("startup")
+async def startup_event():
+    await Tortoise.init(TORTOISE_CONFIG)
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
     await Tortoise.close_connections()
-    return response
+
+
+register_tortoise(
+        app,
+        TORTOISE_CONFIG,
+        generate_schemas=True,
+        add_exception_handlers=True,
+    )
+
+
+# @app.middleware("http")
+# async def add_process_time_header(request: Request, call_next):
+#     await Tortoise.init(config=TORTOISE_CONFIG)
+#     response = await call_next(request)
+#     await Tortoise.close_connections()
+#     return response
 
 
 class PingHistory(Model):
