@@ -70,7 +70,7 @@ app.add_middleware(
 async def add_process_time_header(request: Request, call_next):
     await Tortoise.init(TORTOISE_CONFIG)
     response = await call_next(request)
-    await Tortoise.close_connections()
+    # await Tortoise.close_connections()
     return response
 
 
